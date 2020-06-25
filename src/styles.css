@@ -1,0 +1,19 @@
+html {
+  height: 100%;
+}
+body {
+  white-space: break-spaces;
+  background: black;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  color: white;
+  font-family: Arial, Helvetica, sans-serif;
+}
+#canvas {
+  margin: auto;
+  background-color: rgb(32, 32, 32);
+}
+
