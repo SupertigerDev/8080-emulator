@@ -23,7 +23,7 @@ export default class CPU {
     }
 
     step() {
-        console.log("0x" + this.pc.toString(16), "0x" + this.readByte(this.pc))
+        // console.log("0x" + this.pc.toString(16), "0x" + this.readByte(this.pc))
         const opcode = this.readByte(this.pc++);
         switch(opcode) {
             case 0x0: break // NOP
@@ -409,6 +409,16 @@ export default class CPU {
                 this.pc = address;
                 break;
             }
+            case 0xc4: { // CNZ a16 z === 0
+                if (this.flags[z] === 0) {
+                    const address = this.readWord(this.pc);
+                    this.pc+= 1;
+                    
+                    this.writeWord(this.indexRegisters[sp], this.pc)
+                    this.pc = address;
+                }
+                break;
+            }
             case 0xca: { // JZ z == 1
                 if (this.flags[z] === 1) return;
                 const byte2 = this.readByte(this.pc++);
@@ -421,11 +431,39 @@ export default class CPU {
                 console.log("illegal opcode.")
                 break;
             }
+            case 0xcC: { // CZ a16 z === 1
+                if (this.flags[z] === 1) {
+                    const address = this.readWord(this.pc);
+                    this.pc+= 1;
+                    
+                    this.writeWord(this.indexRegisters[sp], this.pc)
+                    this.pc = address;
+                }
+                break;
+            }
+            case 0xcd: { // CALL a16
+                const address = this.readWord(this.pc);
+                this.pc+= 1;
+
+                this.writeWord(this.indexRegisters[sp], this.pc)
+                this.pc = address;
+                break;
+            }
             case 0xd2: { // JNC a16 cy === 0
                 if (this.flags[cy] === 0)  {
                     const byte2 = this.readByte(this.pc++);
                     const byte1 = this.readByte(this.pc++);
                     const address = (byte1 << 8) | byte2;
+                    this.pc = address;
+                }
+                break;
+            }
+            case 0xd4: { // CNC a16 c === 0
+                if (this.flags[cy] === 0) {
+                    const address = this.readWord(this.pc);
+                    this.pc+= 1;
+                    
+                    this.writeWord(this.indexRegisters[sp], this.pc)
                     this.pc = address;
                 }
                 break;
@@ -439,11 +477,35 @@ export default class CPU {
                 }
                 break;
             }
+            case 0xdC: { // CC a16 c === 1
+                if (this.flags[cy] === 1) {
+                    const address = this.readWord(this.pc);
+                    this.pc+= 1;
+                    
+                    this.writeWord(this.indexRegisters[sp], this.pc)
+                    this.pc = address;
+                }
+                break;
+            }
+            case 0xDD: { // CAL a16 illegal opcode
+                console.log("illegal opcode.")
+                break;
+            }
             case 0xE2: { // JPO a16 p == 0
                 if (this.flags[p] === 0) {
                     const byte2 = this.readByte(this.pc++);
                     const byte1 = this.readByte(this.pc++);
                     const address = (byte1 << 8) | byte2;
+                    this.pc = address;
+                }
+                break;
+            }
+            case 0xE4: { // CPO a16 p === 0
+                if (this.flags[p] === 0) {
+                    const address = this.readWord(this.pc);
+                    this.pc+= 1;
+                    
+                    this.writeWord(this.indexRegisters[sp], this.pc)
                     this.pc = address;
                 }
                 break;
@@ -457,11 +519,35 @@ export default class CPU {
                 }
                 break;
             }
+            case 0xEC: { // CPO a16 p === 1
+                if (this.flags[p] === 1) {
+                    const address = this.readWord(this.pc);
+                    this.pc+= 1;
+                    
+                    this.writeWord(this.indexRegisters[sp], this.pc)
+                    this.pc = address;
+                }
+                break;
+            }
+            case 0xED: { // CAL a16 illegal opcode
+                console.log("illegal opcode.")
+                break;
+            }
             case 0xF2: { // JPO a16 p === 0
                 if (this.flags[s] === 1)  {
                     const byte2 = this.readByte(this.pc++);
                     const byte1 = this.readByte(this.pc++);
                     const address = (byte1 << 8) | byte2;
+                    this.pc = address;
+                }
+                break;
+            }
+            case 0xF4: { // CP a16 s === 1
+                if (this.flags[s] === 1) {
+                    const address = this.readWord(this.pc);
+                    this.pc+= 1;
+                    
+                    this.writeWord(this.indexRegisters[sp], this.pc)
                     this.pc = address;
                 }
                 break;
@@ -475,9 +561,30 @@ export default class CPU {
                 }
                 break;
             }
+            case 0xFC: { // CP a16 s === 0
+                if (this.flags[s] === 0) {
+                    const address = this.readWord(this.pc);
+                    this.pc+= 1;
+                    
+                    this.writeWord(this.indexRegisters[sp], this.pc)
+                    this.pc = address;
+                }
+                break;
+            }
+            case 0xFD: { // CAL a16 illegal opcode
+                console.log("illegal opcode.")
+                break;
+            }
             default:
                 throw Error("Unknown Opcode: 0x" + opcode.toString(16))
         }        
+    }
+    readWord (address) {
+        return ((this.readByte(address + 1) << 8) | this.readByte(address))
+    }
+    writeWord(address, value) {
+        this.writeByte(address + 1, value >> 8)
+        this.writeByte(address, value & 0xFF)
     }
     readByte(address) {
         if (address <= 0x1FFF) {

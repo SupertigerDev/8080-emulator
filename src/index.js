@@ -57,16 +57,13 @@ function startEmulation(program) {
 <strong>C:</strong> ${cpu.flags[cy]}
 `.trim()
 
-// cpu.ram[0] = 0x80;
-// console.log(cpu.readByte (0x2000).toString(16))
-try {
-  cpu.step()
-  
+    // cpu.ram[0] = 0x80;
+    // console.log(cpu.readByte (0x2000).toString(16))
+    try {
+      cpu.step()
     }
     catch(err) {
       console.log(err.message)
     }
   }, 0);
-
-
 }
