@@ -27,7 +27,7 @@ loadProgram(program) {
 }
 
     step() {
-        //console.log("0x" + this.pc.toString(16), "0x" + this.readByte(this.pc).toString(16) + `(${nameByOp(this.readByte(this.pc))})`)
+        // console.log("0x" + this.pc.toString(16), "0x" + this.readByte(this.pc).toString(16) + `(${nameByOp(this.readByte(this.pc))})`)
         const opcode = this.readByte(this.pc++);
         switch(opcode) {
             case 0x0: break // NOP
@@ -424,11 +424,36 @@ loadProgram(program) {
                 if (this.flags[cy] === 0)  this.JMP();
                 break;
             }
+            case 0xd3: { //OUT
+                if (this.registers[c] === 2) {
+                    console.log(this.registers[e])
+                    this.pc++;
+                } else if (this.registers[c] === 9) {
+                    const DE = (this.registers[d] << 8) | this.registers[e];
+                    let count = 0;
+                    let message = ""
+                    while (true){
+                        const char = String.fromCharCode(this.memory[DE + count]);
+                        if (char === "$") {
+                            console.log(message)
+                            this.pc++;
+                            break;
+                        }
+                        message = message + char;
+                        count +=1;
+                    }
+                }
+                break;
+            }
             case 0xd4: { // CNC a16 c === 0
                 if (this.flags[cy] === 0) this.CALL();
                 break;
             }
-            case 0xd5: this.PUSH(this.registers[d], this.registers[e]); break; //PUSH D
+            case 0xd5: {
+                const DE = this.registers[d] << 8 | this.registers[e];
+                this.PUSH(DE);
+                break;
+            }
             // { //
             //     this.writeByte(this.indexRegisters[sp] - 2, this.registers[e])
             //     this.writeByte(this.indexRegisters[sp] - 1,  this.registers[d])
@@ -439,6 +464,7 @@ loadProgram(program) {
                 if (this.flags[cy] === 1) this.JMP();
                 break;
             }
+            // case  0xdb: 
             case 0xdC: { // CC a16 c === 1
                 if (this.flags[cy] === 1) this.CALL();
                 break;
@@ -503,7 +529,7 @@ loadProgram(program) {
             }
 
             default: {
-                const error = new Error("Unknown Opcode: 0x" + opcode.toString(16) + `(${nameByOp(opcode)}`);
+                const error = new Error("Unknown Opcode: 0x" + opcode.toString(16) + ` (${nameByOp(opcode)}`);
                 error.name = "not_impl"
                 throw error;
             }
@@ -513,38 +539,23 @@ loadProgram(program) {
         this.pc = this.readWord(this.pc);
     }
 
-    PUSH(val1, val2) {
-        if (val2 === undefined) {
-            this.writeWord(this.indexRegisters[sp], val1)
-        } else {
-            this.writeByte(this.indexRegisters[sp] - 2, val2)
-            this.writeByte(this.indexRegisters[sp] - 1,  val1)
-        }
+    PUSH(val) {
+        this.writeWord(this.indexRegisters[sp], val)
         this.indexRegisters[sp]-= 2;
     }
-    POP(reg1, reg2) {
-        if (reg2 === undefined) {
-            this.registers[reg1] = this.readWord(this.indexRegisters[sp]);
-        } else {
-            this.registers[reg1] = this.readByte(this.indexRegisters[sp] + 1); 
-            this.registers[reg2] = this.readByte(this.indexRegisters[sp]); 
-        }
-
+    POP() {
         this.indexRegisters[sp]+= 2
+        return this.readWord(this.indexRegisters[sp]);
     }
     CALL() {
         const address = this.readWord(this.pc);
         this.pc+= 2;
-        this.PUSH(this.registers[this.pc])
+        this.PUSH(this.pc)
         this.pc = address;
     }
     RET() {
-        const address = this.readWord(this.pc);
-        this.pc+= 2;
-        this.POP(this.pc)
-        this.pc = address;
+        this.pc = this.POP();
     }
-
     readWord (address) {
         return ((this.readByte(address + 1) << 8) | this.readByte(address))
     }

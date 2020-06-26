@@ -70,33 +70,6 @@ function startEmulation(program) {
     try {
       cpu.step()
 
-      // test
-
-      // if i.cpu.reg.pc == 07 {
-      //   if i.cpu.reg.c == 9 {
-      //       let mut de = i.cpu.get_pair(DE);
-      //       'print: loop {
-      //            let output = i.cpu.memory.rom[de as usize];
-      //            if output as char == '$' {
-      //                break 'print;
-      //            } else if output as char != '$' {
-      //                de += 1;
-      //        }
-      //        print!("{}", output as char);
-      //       }
-      //   }
-      //   if i.cpu.reg.c == 2 {
-      //       print!("{}", i.cpu.reg.e as char);
-      //    }
-
-    if (cpu.pc === 0x07) {
-      console.log("SEVEN")
-    }
-
-
-      //test
-
-
     }
     catch(err) {
       if (err.name && err.name === "not_impl") {
