@@ -23,8 +23,8 @@ export default class CPU {
     }
 
     step() {
+        console.log("0x" + this.pc.toString(16), "0x" + this.readByte(this.pc))
         const opcode = this.readByte(this.pc++);
-        console.log(opcode.toString(16))
         switch(opcode) {
             case 0x0: break // NOP
             case 0x01: { //LXI   B,word   
@@ -312,6 +312,9 @@ export default class CPU {
                 const byte2 = this.readByte(this.pc++);
                 const byte1 = this.readByte(this.pc++);
                 const address = (byte1 << 8) | byte2;
+                // console.log("adr", address.toString(16))
+                // console.log("pc", this.pc.toString(16))
+                // console.log("pc", this.pc)
                 this.writeByte(address, this.registers[a])
                 break;
             }
@@ -390,6 +393,88 @@ export default class CPU {
                 this.flags[cy] = this.flags[cy] & 1;
                 break;
             }
+            case 0xc2: { // JNZ z == 0
+                if (this.flags[z] === 0) {
+                    const byte2 = this.readByte(this.pc++);
+                    const byte1 = this.readByte(this.pc++);
+                    const address = (byte1 << 8) | byte2;
+                    this.pc = address;
+                }
+                break;
+            }
+            case 0xc3: { // JMP a16
+                const byte2 = this.readByte(this.pc++);
+                const byte1 = this.readByte(this.pc++);
+                const address = (byte1 << 8) | byte2;
+                this.pc = address;
+                break;
+            }
+            case 0xca: { // JZ z == 1
+                if (this.flags[z] === 1) return;
+                const byte2 = this.readByte(this.pc++);
+                const byte1 = this.readByte(this.pc++);
+                const address = (byte1 << 8) | byte2;
+                this.pc = address;
+                break;
+            }
+            case 0xcb: { // JMP a16 illegal opcode
+                console.log("illegal opcode.")
+                break;
+            }
+            case 0xd2: { // JNC a16 cy === 0
+                if (this.flags[cy] === 0)  {
+                    const byte2 = this.readByte(this.pc++);
+                    const byte1 = this.readByte(this.pc++);
+                    const address = (byte1 << 8) | byte2;
+                    this.pc = address;
+                }
+                break;
+            }
+            case 0xdA: { // JC a16 if cy === 1
+                if (this.flags[cy] === 1){
+                    const byte2 = this.readByte(this.pc++);
+                    const byte1 = this.readByte(this.pc++);
+                    const address = (byte1 << 8) | byte2;
+                    this.pc = address;
+                }
+                break;
+            }
+            case 0xE2: { // JPO a16 p == 0
+                if (this.flags[p] === 0) {
+                    const byte2 = this.readByte(this.pc++);
+                    const byte1 = this.readByte(this.pc++);
+                    const address = (byte1 << 8) | byte2;
+                    this.pc = address;
+                }
+                break;
+            }
+            case 0xEA: { // JPE a16 p === 1
+                if (this.flags[p] === 1) {
+                    const byte2 = this.readByte(this.pc++);
+                    const byte1 = this.readByte(this.pc++);
+                    const address = (byte1 << 8) | byte2;
+                    this.pc = address;
+                }
+                break;
+            }
+            case 0xF2: { // JPO a16 p === 0
+                if (this.flags[s] === 1)  {
+                    const byte2 = this.readByte(this.pc++);
+                    const byte1 = this.readByte(this.pc++);
+                    const address = (byte1 << 8) | byte2;
+                    this.pc = address;
+                }
+                break;
+            }
+            case 0xFA: { // JC a16 s === 0
+                if (this.flags[s] === 0) {
+                    const byte2 = this.readByte(this.pc++);
+                    const byte1 = this.readByte(this.pc++);
+                    const address = (byte1 << 8) | byte2;
+                    this.pc = address;
+                }
+                break;
+            }
             default:
                 throw Error("Unknown Opcode: 0x" + opcode.toString(16))
         }        
@@ -412,7 +497,7 @@ export default class CPU {
         if (address <= 0x5FFF) {
             return this.vram[address -  0x4400]
         }
-        console.log("Invalid Address (read)")
+        console.log("Invalid Address (readByte)")
     }
     writeByte(address, value) {
 
@@ -434,11 +519,10 @@ export default class CPU {
         }
         // VRAM MIRROR
         if (address <= 0x5FFF) {
-            this.ram[address - 0x4400] = value
+            this.vram[address - 0x4400] = value
             return
         }
-        console.log("Invalid Address (write)")
-
+        console.log("Invalid Address (writeByte)")
     }
     setSignZeroParity(number) {
         this.flags[s] = number >> 7;
