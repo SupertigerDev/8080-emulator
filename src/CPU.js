@@ -38,7 +38,8 @@ export default class CPU {
                 break;
             }
             case 0x03: { // INX B (inc BC)
-                const BC = (this.registers[b] << 8) | this.registers[c];        
+                let BC = (this.registers[b] << 8) | this.registers[c];    
+                BC++;    
                 this.registers[b] = ((BC & 0xFF00) >> 8);
                 this.registers[c] = (BC & 0x00FF);
                         
@@ -123,6 +124,7 @@ export default class CPU {
             }
             case 0x13: { // INX D
                 let DE = (this.registers[d] << 8) | this.registers[e];
+                DE++;
                 this.registers[d] = ((DE & 0xFF00) >> 8);
                 this.registers[e] = (DE & 0x00FF);
                 break;
@@ -196,7 +198,7 @@ export default class CPU {
                 break;    
             }
             case 0x20: break // NOP
-            case 0x21: { // LXI D
+            case 0x21: { // LXI H
                 this.registers[l] = this.readByte(this.pc++);
                 this.registers[h] = this.readByte(this.pc++);
                 break;
@@ -223,13 +225,13 @@ export default class CPU {
                 this.setSignZeroParity(this.registers[h])
                 break;
             }
-            case 0x25: {//DCR M
+            case 0x25: {//DCR H
                 this.flags[ac] = (this.registers[h] & 0x0F) === 0
                 this.registers[h]--;
                 this.setSignZeroParity(this.registers[h])
                 break;
             }
-            case 0x26: { // MVI M,d8
+            case 0x26: { // MVI H,d8
                 this.registers[h] = this.readByte(this.pc++);
                 break;
             }
@@ -268,8 +270,8 @@ export default class CPU {
                 const byte1 = this.readByte(this.pc++);
                 const address = (byte1 << 8) | byte2;
 
-                this.registers[l] = address
-                this.registers[h] = address + 1
+                this.registers[l] = this.readByte(address)
+                this.registers[h] = this.readByte(address + 1)
                 break;
             }
             case 0x2B: { // DCX H
@@ -318,27 +320,28 @@ export default class CPU {
                 break;
             }
             case 0x34: { // INR M
-                let HL = (this.registers[h] << 8) | this.registers[l];
-                this.flags[ac] = (HL & 0x0F) + 1 > 0x0F;
-                HL += 1;
-                this.registers[h] = ((HL & 0xFF00) >> 8);
-                this.registers[l] = (HL & 0x00FF);
-                this.setSignZeroParity(HL)
+                const HL = (this.registers[h] << 8) | this.registers[l];
+                const value = this.readByte(HL);
+                this.flags[ac] = (value & 0x0F) + 1 > 0x0F;
+                this.writeByte(HL, value + 1);
+
+                this.setSignZeroParity(value + 1)
                 break;
             }
             case 0x35: { // DCR M
                 let HL = (this.registers[h] << 8) | this.registers[l];
-                this.flags[ac] = (HL & 0x0F) === 0
-                HL -= 1;
-                this.registers[h] = ((HL & 0xFF00) >> 8);
-                this.registers[l] = (HL & 0x00FF);
-                this.setSignZeroParity(HL)
+                const value = this.readByte(HL);
+                this.flags[ac] = (value & 0x0F) === 0
+                this.writeByte(HL, value - 1);
+
+                this.setSignZeroParity(value -1)
                 break;
             }
             case 0x36: { // MVI M ((HL) <- byte 2)
+                let HL = (this.registers[h] << 8) | this.registers[l];
                 const byte = this.readByte(this.pc++);
-                this.registers[h] = byte & 0xF;
-                this.registers[l] = byte >> 4;
+
+                this.writeByte(HL, byte);
                 break;
             }
             case 0x37: { // STC
@@ -359,7 +362,7 @@ export default class CPU {
                 const byte2 = this.readByte(this.pc++);
                 const byte1 = this.readByte(this.pc++);
                 const address = (byte1 << 8) | byte2;
-                this.registers[a] = address;
+                this.registers[a] = this.readByte(address);
                 break;
             }
             case 0x3B: { // DCX SP
@@ -378,7 +381,7 @@ export default class CPU {
                 this.setSignZeroParity(this.registers[a]);
                 break;
             }
-            case 0x3E: {
+            case 0x3E: { // MVI A, d8
                 this.registers[a] = this.readByte(this.pc++);
                 break;
             }
@@ -417,18 +420,22 @@ export default class CPU {
             return;
         }
         if (address <= 0x23FF) {    
-            return this.ram[address - 0x2000] = value
+            this.ram[address - 0x2000] = value
+            return 
         }
         if (address <= 0x3FFF) {
-            return this.ram[address - 0x2400] = value
+            this.ram[address - 0x2400] = value
+            return
         }
         // RAM MIRROR
         if (address <= 0x43FF){
-            return this.ram[address - 0x4000] = value
+            this.ram[address - 0x4000] = value
+            return
         }
         // VRAM MIRROR
         if (address <= 0x5FFF) {
-            return this.ram[address - 0x4400] = value
+            this.ram[address - 0x4400] = value
+            return
         }
         console.log("Invalid Address (write)")
 
