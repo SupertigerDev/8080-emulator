@@ -31,6 +31,16 @@ function startEmulation(program) {
 
   cpu.loadProgram(program)
 
+  // to run test roms
+  cpu.pc = 0x100;
+  
+  cpu.memory[0x0000] = 0xD3;
+  cpu.memory[0x0001] = 0x00;
+
+  cpu.memory[0x0005] = 0xDB;
+  cpu.memory[0x0006] = 0x00;
+  cpu.memory[0x0007] = 0xC9;
+
   setInterval(() => {
       informationSpan.innerHTML = `
 <strong>Current Instruction:</strong> 0x${cpu.readByte(cpu.pc).toString(16)}
@@ -57,13 +67,43 @@ function startEmulation(program) {
 <strong>C:</strong> ${cpu.flags[cy]}
 `.trim()
 
-    // cpu.ram[0] = 0x80;
-    // console.log(cpu.readByte (0x2000).toString(16))
     try {
       cpu.step()
+
+      // test
+
+      // if i.cpu.reg.pc == 07 {
+      //   if i.cpu.reg.c == 9 {
+      //       let mut de = i.cpu.get_pair(DE);
+      //       'print: loop {
+      //            let output = i.cpu.memory.rom[de as usize];
+      //            if output as char == '$' {
+      //                break 'print;
+      //            } else if output as char != '$' {
+      //                de += 1;
+      //        }
+      //        print!("{}", output as char);
+      //       }
+      //   }
+      //   if i.cpu.reg.c == 2 {
+      //       print!("{}", i.cpu.reg.e as char);
+      //    }
+
+    if (cpu.pc === 0x07) {
+      console.log("SEVEN")
+    }
+
+
+      //test
+
+
     }
     catch(err) {
-      console.log(err.message)
+      if (err.name && err.name === "not_impl") {
+        console.log(err.message)
+        return;
+      }
+      console.error(err);
     }
-  }, 0);
+  }, 100);
 }
