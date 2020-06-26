@@ -483,7 +483,10 @@ loadProgram(program) {
             }
             case 0xe6: { // ANI
                 this.registers[a] = this.registers[a] & this.readByte(this.pc++);
-                //TODO add SZ-A-P0
+                //TODO: idk how to get 3 bit whatever, i give up.
+                //this.flags[ac] = this.registers[a] << 3
+                this.setSignZeroParity(this.registers[a]);
+                this.flags[cy] = 0;
                 break;
             }
             case 0xEA: { // JPE a16 p === 1
