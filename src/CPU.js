@@ -481,6 +481,11 @@ loadProgram(program) {
                 if (this.flags[p] === 0) this.CALL();
                 break;
             }
+            case 0xe6: { // ANI
+                this.registers[a] = this.registers[a] & this.readByte(this.pc++);
+                //TODO add SZ-A-P0
+                break;
+            }
             case 0xEA: { // JPE a16 p === 1
                 if (this.flags[p] === 1) this.JMP();
                 break;
